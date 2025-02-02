@@ -4,8 +4,9 @@ import 'package:student_dashboard/screens/start_screen.dart';
 import 'package:student_dashboard/screens/welcome_screen.dart';
 
 class CustomContainer extends StatefulWidget {
-  const CustomContainer({super.key, required this.firsttime});
-  final bool firsttime;
+  CustomContainer({super.key, required this.firsttime, required this.db});
+  bool firsttime;
+  final Database? db;
   @override
   State<StatefulWidget> createState() {
     return _CustomContainerState();
@@ -13,18 +14,34 @@ class CustomContainer extends StatefulWidget {
 }
 
 class _CustomContainerState extends State<CustomContainer> {
+  bool? first;
   void _changescreen(String name) {
-    content = StartScreen(name:name);
+    content = StartScreen(name: name);
+  }
+
+  Future<bool> _firstTime() async {
+    final respone = await widget.db!.rawQuery('select * from firsttime');
+    bool isTableEmpty = respone.isEmpty;
+    print(respone);
+    if (isTableEmpty) {
+      return true;
+    }
+    return false;
   }
 
   Widget content = StartScreen(name: '-1');
   @override
   void initState() {
+    super.initState();
+    _firstTime().then((value) {
+      setState(() {
+        first = value;
+      });
+    });
+    print(widget.firsttime);
     if (widget.firsttime) {
       content = WelcomeScreen(press: _changescreen);
     }
-
-    super.initState();
   }
 
   @override

@@ -4,9 +4,6 @@ import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:student_dashboard/Widgets/container.dart';
 import 'package:student_dashboard/Widgets/gpa_calculator.dart';
-import 'package:student_dashboard/screens/add_sem.dart';
-import 'package:student_dashboard/screens/welcome_screen.dart';
-import 'package:student_dashboard/screens/start_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,23 +14,31 @@ void main() async {
     path,
     version: 1,
     onCreate: (Database dtb, int version) async {
-      await dtb.execute(
+      await dtb.rawQuery(
           'CREATE TABLE firsttime (id INTEGER PRIMARY KEY, name TEXT)');
+
+      await dtb.rawQuery(
+          'CREATE TABLE if not exists firsttime  (id INTEGER PRIMARY KEY, name TEXT)');
+
+      await dtb.rawQuery(
+          'CREATE TABLE if not exists students (id INTEGER PRIMARY KEY, name TEXT, Major TEXT, GPA REAL, semesters INTEGER )');
+      await dtb.rawQuery(
+          'create table if not exists semesters (semid INTEGER PRIMARY KEY, semester_name Text)');
+      await dtb.rawQuery(
+          'create table if not exists grade (gradeid INTEGER PRIMARY KEY, Grade TEXT, score REAL)');
+      await dtb.rawQuery(
+          'create table if not exists courses (courseid INTEGER PRIMARY KEY, sid INTEGER, course_name TEXT, grade Integer, credit INTEGER, foreign key (sid) references semesters on delete cascade,foreign key (grade) references grade on update cascade) ');
+      await dtb.rawQuery(
+          'create table if not exists GPA (Gid INTEGER PRIMARY KEY,semesterid integer, GPA REAL,CGPA real,total_credit INTEGER,foreign key (semesterid) references semesters on delete cascade)');
     },
   );
   // await db.execute('drop table students');
-  await db.execute(
-      'CREATE TABLE if not exists firsttime  (id INTEGER PRIMARY KEY, name TEXT)');
 
   final List<Map<String, dynamic>> response =
       await db.rawQuery('SELECT * FROM firsttime');
   bool isTableEmpty = response.isEmpty;
   if (isTableEmpty) {
-    await db.insert(
-      'firsttime',
-      {'id': 1, 'name': 'firsttime'},
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    await db.rawInsert('INSERT INTO firsttime (name) VALUES ("firsttime")');
   }
 
   // await db.execute('drop table firsttime');
@@ -49,8 +54,8 @@ void main() async {
 }
 
 class MyApp extends StatefulWidget {
-  const MyApp({super.key, required this.firsttime, required this.db});
-  final bool firsttime;
+  MyApp({super.key, required this.firsttime, required this.db});
+  bool firsttime;
   final Database db;
   @override
   State<MyApp> createState() {
@@ -64,9 +69,10 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
+    // widget.firsttime = false;
     screens = [
       GpaCalculator(db: widget.db),
-      CustomContainer(firsttime: false),
+       CustomContainer(firsttime: false, db: widget.db),
     ];
   }
 
@@ -111,11 +117,13 @@ class _MyAppState extends State<MyApp> {
                   // ),
                 ],
                 onTap: (index) => setState(() {
+                  widget.firsttime = false;
                   _currentIndex = index;
                 }),
               ),
               body: _currentIndex == 1
                   ? CustomContainer(
+                      db: widget.db,
                       firsttime: widget.firsttime,
                     )
                   : screens[_currentIndex]),

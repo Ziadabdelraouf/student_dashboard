@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+// import 'package:google_fonts/google_fonts.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:student_dashboard/screens/start_screen.dart';
@@ -37,23 +37,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             'CREATE TABLE if not exists students (id INTEGER PRIMARY KEY, name TEXT, Major TEXT )');
       },
     );
-    await db.execute('drop table grade');
-    await db.execute(
-        'CREATE TABLE if not exists grade (id INTEGER PRIMARY KEY, Grade TEXT, score REAL)');
-    await db.execute(
-        'CREATE TABLE if not exists students (id INTEGER PRIMARY KEY, name TEXT, Major TEXT, GPA REAL, semesters INTEGER )');
-    await db.execute(
-        'create table if not exists semesters (semid INTEGER PRIMARY KEY, semester_name Text)');
-    await db.execute(
-        'create table if not exists grade (gradeid INTEGER PRIMARY KEY, Grade TEXT, score REAL)');
-    await db.execute(
-        'create table if not exists courses (courseid INTEGER PRIMARY KEY, sid INTEGER, course_name TEXT, grade Integer, credit INTEGER, foreign key (sid) references semesters on delete cascade,foreign key (grade) references grade on update cascade) ');
-    await db.execute(
-        'create table if not exists GPA (Gid INTEGER PRIMARY KEY,semesterid integer, GPA REAL,CGPA real,total_credit INTEGER,foreign key (semesterid) references semesters on delete cascade)');
-
-    await db.execute(
-        'INSERT INTO students (name,major,GPA, semesters) VALUES (?,?,0,0)',
-        [name, major]);
     await db
         .rawInsert('INSERT INTO grade (Grade,score) VALUES (?,?)', ['A+', 4.0]);
     await db
@@ -76,6 +59,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         .rawInsert('INSERT INTO grade (Grade,score) VALUES (?,?)', ['D+', 1.3]);
     await db
         .rawInsert('INSERT INTO grade (Grade,score) VALUES (?,?)', ['D', 1.0]);
+    await db.execute(
+        'INSERT INTO students (name,major,GPA, semesters) VALUES (?,?,0,0)',
+        [name, major]);
     //  db.close();
     setState(() {
       isadding = false;
@@ -108,8 +94,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   children: [
                     Text(
                       'Welcome to Student Dashboard',
-                      style: GoogleFonts.roboto(
-                        textStyle: Theme.of(context).textTheme.headlineLarge,
+                      style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
                         fontStyle: FontStyle.italic,

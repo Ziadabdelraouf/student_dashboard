@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:student_dashboard/Widgets/editable_text.dart';
 import 'package:student_dashboard/screens/add_sem.dart';
 
 class GpaCalculator extends StatefulWidget {
@@ -30,7 +28,7 @@ class _GpaCalculatorState extends State<GpaCalculator> {
   List<Map<String, dynamic>> gpa = [];
   Future<void> _getgpa() async {
     gpa = await widget.db!.rawQuery(
-        'select semester_name,total_credit,Gpa from semesters join GPA on semesters.semid = GPA.semesterid ');
+        'select semester_name,total_credit,Gpa,semesterid from semesters join GPA on semesters.semid = GPA.semesterid ');
     setState(() {});
     final List<Map<String, dynamic>> response =
         await widget.db!.rawQuery('SELECT * FROM GPA');
@@ -81,12 +79,24 @@ class _GpaCalculatorState extends State<GpaCalculator> {
                       itemBuilder: (context, index) {
                         return Card(
                           child: ListTile(
+                            onTap: () async {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => AddSem(
+                                    db: widget.db!,
+                                    id: gpa[index]['semesterid'],
+                                  ),
+                                ),
+                              );
+                            },
                             title: Text(gpa[index]['semester_name']),
                             subtitle: Text(
-                              double.parse(
-                                double.parse(gpa[index]['GPA'].toString())
-                                    .toStringAsFixed(3),
-                              ).toString(),
+                              gpa[index]['GPA'] == null
+                                  ? '0'
+                                  : double.parse(
+                                      double.parse(gpa[index]['GPA'].toString())
+                                          .toStringAsFixed(3),
+                                    ).toString(),
                             ),
                           ),
                         );
@@ -104,14 +114,14 @@ class _GpaCalculatorState extends State<GpaCalculator> {
                     backgroundColor: WidgetStatePropertyAll(Colors.red),
                   ),
                   onPressed: () async {
-                    await widget.db!.execute('drop table courses');
-                    await widget.db!.execute('drop table GPA ');
-                    await widget.db!.execute('drop table semesters');
-                    await widget.db!.execute(
+                    await widget.db!.rawQuery('drop table courses');
+                    await widget.db!.rawQuery('drop table GPA ');
+                    await widget.db!.rawQuery('drop table semesters');
+                    await widget.db!.rawQuery(
                         'create table if not exists semesters (semid INTEGER PRIMARY KEY, semester_name Text)');
-                    await widget.db!.execute(
+                    await widget.db!.rawQuery(
                         'create table if not exists courses (courseid INTEGER PRIMARY KEY, sid INTEGER, course_name TEXT, grade id, credit INTEGER, foreign key (sid) references semesters on delete cascade,foreign key (grade) references grade on update cascade) ');
-                    await widget.db!.execute(
+                    await widget.db!.rawQuery(
                         'create table if not exists GPA (Gid INTEGER PRIMARY KEY,semesterid integer, GPA REAL,CGPA real,total_credit INTEGER,foreign key (semesterid) references semesters on delete cascade)');
                     _getgpa();
                   },

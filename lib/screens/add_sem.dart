@@ -1,8 +1,5 @@
-import 'dart:ffi';
-
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+// import 'package:google_fonts/google_fonts.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:student_dashboard/Widgets/editable_text.dart';
 
@@ -37,9 +34,9 @@ class _AddSemState extends State<AddSem> {
     );
   }
 
-  void _getSemesters() async {
+  Future<void> _getSemesters() async {
     semesters = await widget.db.rawQuery(
-      'SELECT course_name,grade.grade as grade,credit,courseid FROM courses  join grade ON courses.grade=gradeid where sid = ${widget.id}',
+      'SELECT course_name,grade.grade as grade,credit,courseid,gradeid FROM courses  join grade ON courses.grade=gradeid where sid = ${widget.id}',
     );
     setState(() {});
   }
@@ -56,6 +53,12 @@ class _AddSemState extends State<AddSem> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        leading: EditableTextWidget(
+          changename: _changeName,
+          initname: 'Semester ${widget.id}',
+        ),
+      ),
       backgroundColor: Colors.transparent,
 
       // alignment: Alignment.center,
@@ -74,10 +77,6 @@ class _AddSemState extends State<AddSem> {
             crossAxisAlignment: CrossAxisAlignment.center,
             spacing: 20,
             children: [
-              EditableTextWidget(
-                changename: _changeName,
-                initname: 'Semester ${widget.id}',
-              ),
               SizedBox(
                 height: 3,
                 width: double.infinity,
@@ -97,6 +96,7 @@ class _AddSemState extends State<AddSem> {
                           TextEditingController();
                       final formKey = GlobalKey<FormState>();
                       String? errorname;
+                      print(grades);
                       showModalBottomSheet(
                         elevation: 20,
                         context: context,
@@ -153,7 +153,7 @@ class _AddSemState extends State<AddSem> {
                                             (grade) {
                                               return DropdownMenuEntry<int>(
                                                   value: grade['gradeid'],
-                                                  label: grade['grade']);
+                                                  label: grade['Grade']);
                                             },
                                           ).toList()),
                                       DropdownMenu(
@@ -250,10 +250,8 @@ class _AddSemState extends State<AddSem> {
                         heightFactor: 2,
                         child: Text(
                           'Add courses!',
-                          style: GoogleFonts.roboto(
-                            textStyle: TextStyle(
-                              fontSize: 20,
-                            ),
+                          style: TextStyle(
+                            fontSize: 20,
                           ),
                         ),
                       )
@@ -270,6 +268,90 @@ class _AddSemState extends State<AddSem> {
                             child: Card(
                               elevation: 3,
                               child: ListTile(
+                                onTap: () {
+                                  showModalBottomSheet(
+                                    context: context,
+                                    builder: (context) {
+                                      return Container(
+                                        padding: EdgeInsets.all(20),
+                                        height:
+                                            MediaQuery.of(context).size.height *
+                                                0.4,
+                                        color: Colors.white,
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceEvenly,
+                                          children: [
+                                            Text(semesters[index]
+                                                ['course_name']),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.spaceEvenly,
+                                              children: [
+                                                DropdownMenu(
+                                                  initialSelection:
+                                                      semesters[index]
+                                                          ['gradeid'],
+                                                  onSelected: (grade) async {
+                                                    print(semesters[index]
+                                                        ['gradeid']);
+                                                    await widget.db.rawUpdate(
+                                                        "UPDATE courses SET grade = ? WHERE courseid = ?",
+                                                        [
+                                                          int.parse(
+                                                              grade.toString()),
+                                                          semesters[index]
+                                                              ['courseid']
+                                                        ]);
+                                                  },
+                                                  dropdownMenuEntries:
+                                                      grades!.map((grade) {
+                                                    return DropdownMenuEntry<
+                                                        int>(
+                                                      value: grade['gradeid'],
+                                                      label: grade['Grade'],
+                                                    );
+                                                  }).toList(),
+                                                ),
+                                                DropdownMenu(
+                                                  initialSelection:
+                                                      semesters[index]
+                                                          ['credit'],
+                                                  onSelected: (credit) async {
+                                                    await widget.db.rawUpdate(
+                                                        "UPDATE courses SET credit = ? WHERE courseid = ?",
+                                                        [
+                                                          int.parse(credit
+                                                              .toString()),
+                                                          semesters[index]
+                                                              ['courseid']
+                                                        ]);
+                                                  },
+                                                  dropdownMenuEntries: [
+                                                    DropdownMenuEntry(
+                                                        value: 1, label: '1'),
+                                                    DropdownMenuEntry(
+                                                        value: 2, label: '2'),
+                                                    DropdownMenuEntry(
+                                                        value: 3, label: '3'),
+                                                  ],
+                                                ),
+                                                ElevatedButton(
+                                                  onPressed: () async {
+                                                    setState(() {});
+                                                    await _getSemesters();
+                                                    Navigator.of(context).pop();
+                                                  },
+                                                  child: Text('Save'),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  );
+                                },
                                 title:
                                     Text('${semesters[index]['course_name']}'),
                                 subtitle: Text(

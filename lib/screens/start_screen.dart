@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+// import 'package:google_fonts/google_fonts.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
 class StartScreen extends StatefulWidget {
   StartScreen({required this.name, super.key});
   String name;
-  @override
   @override
   State<StatefulWidget> createState() {
     return _StartScreenState();
@@ -51,8 +50,7 @@ class _StartScreenState extends State<StartScreen> {
         ),
         Text(
           'Student Dashboard',
-          style: GoogleFonts.lato(
-            textStyle: Theme.of(context).textTheme.displayLarge,
+          style: TextStyle(
             fontSize: 25,
             fontWeight: FontWeight.w700,
             fontStyle: FontStyle.italic,
@@ -72,8 +70,7 @@ class _StartScreenState extends State<StartScreen> {
               : Text(
                   'welcome back, ${widget.name}',
                   key: ValueKey(widget.name),
-                  style: GoogleFonts.rubik(
-                    textStyle: Theme.of(context).textTheme.displayLarge,
+                  style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.normal,
                     fontStyle: FontStyle.italic,
