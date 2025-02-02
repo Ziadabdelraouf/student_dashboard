@@ -4,9 +4,11 @@ import 'package:sqflite/sqflite.dart';
 import 'package:student_dashboard/Widgets/editable_text.dart';
 
 class AddSem extends StatefulWidget {
-  const AddSem({super.key, required this.db, required this.id});
+  const AddSem(
+      {super.key, required this.db, required this.id, required this.name});
   final Database db;
   final int id;
+  final String name;
   @override
   State<StatefulWidget> createState() {
     return _AddSemState();
@@ -14,6 +16,8 @@ class AddSem extends StatefulWidget {
 }
 
 class _AddSemState extends State<AddSem> {
+  String name = '';
+  int credits = 0;
   List<Map>? grades;
   List<Map<String, dynamic>> semesters = [];
   Future<void> _addCourse(String courseName, int grade, int credit) async {
@@ -21,6 +25,51 @@ class _AddSemState extends State<AddSem> {
       'INSERT INTO courses(sid,course_name,grade,credit) VALUES(?,?,?,?)',
       [widget.id, courseName, grade, credit],
     );
+  }
+
+  Future<void> updateAllGPAs() async {
+    await widget.db.rawUpdate('''
+    UPDATE GPA 
+    SET GPA = (
+        SELECT SUM(c.credit * g.score) / SUM(c.credit)
+        FROM courses c
+        JOIN grade g ON c.grade = g.gradeid
+        WHERE c.sid = GPA.semesterid
+        GROUP BY c.sid
+    )
+  ''');
+    await widget.db.rawUpdate('''
+    UPDATE GPA 
+    SET total_credit = (
+        SELECT SUM(c.credit)
+        FROM courses c
+        WHERE c.sid = GPA.semesterid
+        GROUP BY c.sid
+    )
+  ''');
+    await widget.db.rawUpdate('''
+    UPDATE GPA 
+    SET CGPA = (
+        SELECT SUM(GPA * total_credit) / SUM(total_credit)
+        FROM GPA
+    )
+  ''');
+    setState(() {});
+  }
+
+  Future<void> _getgpa() async {
+    List<Map> gpa = await widget.db
+        .rawQuery('select Gpa from GPA where semesterid = ${widget.id}');
+    List<Map> credit = await widget.db.rawQuery(
+        'select total_credit from GPA where semesterid = ${widget.id}');
+    setState(() {
+      if (gpa[0]['GPA'] == null) {
+        name = '0.000';
+      } else {
+        name = double.parse(gpa[0]['GPA'].toString()).toStringAsFixed(3);
+      }
+      credits = credit[0]['total_credit'] ?? 0;
+    });
   }
 
   void _getgrades() async {
@@ -38,6 +87,8 @@ class _AddSemState extends State<AddSem> {
     semesters = await widget.db.rawQuery(
       'SELECT course_name,grade.grade as grade,credit,courseid,gradeid FROM courses  join grade ON courses.grade=gradeid where sid = ${widget.id}',
     );
+    await updateAllGPAs();
+    await _getgpa();
     setState(() {});
   }
 
@@ -46,23 +97,33 @@ class _AddSemState extends State<AddSem> {
     super.initState();
     setState(() {
       _getgrades();
+      updateAllGPAs();
       _getSemesters();
+      // _getgpa();
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        leading: EditableTextWidget(
+        // bottomOpacity: 2,
+        elevation: 0,
+
+        centerTitle: true,
+        title: EditableTextWidget(
           changename: _changeName,
-          initname: 'Semester ${widget.id}',
+          initname: widget.name,
         ),
+        backgroundColor: Colors.transparent,
       ),
       backgroundColor: Colors.transparent,
 
       // alignment: Alignment.center,
+
       body: Container(
+        padding: EdgeInsets.only(top: kToolbarHeight),
         decoration: BoxDecoration(
           color: Colors.lightBlue,
           gradient: LinearGradient(
@@ -73,16 +134,14 @@ class _AddSemState extends State<AddSem> {
         ),
         child: Center(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            // mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
-            spacing: 20,
+            spacing: 10,
             children: [
               SizedBox(
-                height: 3,
+                height: kToolbarHeight,
                 width: double.infinity,
-                child: ColoredBox(
-                  color: Colors.white,
-                ),
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -98,130 +157,141 @@ class _AddSemState extends State<AddSem> {
                       String? errorname;
                       print(grades);
                       showModalBottomSheet(
+                        isScrollControlled: true,
                         elevation: 20,
+                        useSafeArea: true,
                         context: context,
                         builder: (context) {
-                          return Form(
-                            child: Container(
-                              padding: EdgeInsets.all(20),
-                              height: MediaQuery.of(context).size.height * 0.4,
-                              width: MediaQuery.of(context).size.height,
-                              color: Colors.white,
-                              child: Column(
-                                spacing: 20,
-                                children: [
-                                  Form(
-                                    key: formKey,
-                                    child: TextFormField(
-                                      onChanged: (value) {
-                                        setState(() {
-                                          errorname = null;
-                                          formKey.currentState!.validate();
-                                        });
-                                      },
-                                      validator: (value) {
-                                        if (value!.isEmpty || value == ' ') {
-                                          return 'enter course name';
-                                        }
-                                        return null;
-                                      },
-                                      decoration: InputDecoration(
-                                        errorText: errorname,
-                                        contentPadding: EdgeInsets.all(10),
-                                        // icon: Icon(Icons.person),
-                                        border: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                        labelText: 'Course name ',
-                                        hintText: 'course name',
-                                      ),
-                                      controller: nameController,
-                                    ),
-                                  ),
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    // spacing: 20,
-                                    children: [
-                                      DropdownMenu(
-                                          onSelected: (grade) =>
-                                              selectedvalue = grade!.toInt(),
-                                          initialSelection: 4,
-                                          // controller: gradecontroller,
-                                          dropdownMenuEntries: grades!.map(
-                                            (grade) {
-                                              return DropdownMenuEntry<int>(
-                                                  value: grade['gradeid'],
-                                                  label: grade['Grade']);
-                                            },
-                                          ).toList()),
-                                      DropdownMenu(
-                                        initialSelection: 2,
-                                        controller: creditcontroller,
-                                        label: Text('Creedit hours'),
-                                        dropdownMenuEntries: [
-                                          DropdownMenuEntry(
-                                              value: 1, label: '1'),
-                                          DropdownMenuEntry(
-                                              value: 2, label: '2'),
-                                          DropdownMenuEntry(
-                                              value: 3, label: '3'),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    spacing: 20,
-                                    children: [
-                                      ElevatedButton.icon(
-                                        style: ButtonStyle(
-                                          iconColor: WidgetStatePropertyAll(
-                                              Colors.white),
-                                          foregroundColor:
-                                              WidgetStatePropertyAll(
-                                                  Colors.white),
-                                          backgroundColor:
-                                              WidgetStatePropertyAll(
-                                                  Colors.red),
-                                        ),
-                                        onPressed: () {
-                                          _getSemesters();
-                                          Navigator.of(context).pop();
-                                        },
-                                        label: Text('cancel'),
-                                        icon: Icon(Icons.cancel),
-                                      ),
-                                      ElevatedButton.icon(
-                                        onPressed: () async {
-                                          print(nameController.text);
-                                          if (!formKey.currentState!
-                                              .validate()) {
-                                            setState(() {
-                                              errorname = 'enter courses name';
-                                            });
-                                            return;
-                                          }
-                                          await _addCourse(
-                                              nameController.text,
-                                              selectedvalue,
-                                              int.parse(creditcontroller.text));
-                                          widget.db
-                                              .rawQuery('SELECT * FROM courses')
-                                              .then((value) => print(value));
-                                          // print();
+                          return Padding(
+                            padding: EdgeInsets.only(
+                                bottom:
+                                    MediaQuery.of(context).viewInsets.bottom),
+                            child: Form(
+                              child: Container(
+                                padding: EdgeInsets.all(20),
+                                height:
+                                    MediaQuery.of(context).size.height * 0.4,
+                                width: MediaQuery.of(context).size.width,
+                                color: Colors.white,
+                                child: Column(
+                                  spacing: 20,
+                                  children: [
+                                    Form(
+                                      key: formKey,
+                                      child: TextFormField(
+                                        onChanged: (value) {
                                           setState(() {
-                                            Navigator.of(context).pop();
+                                            errorname = null;
+                                            formKey.currentState!.validate();
                                           });
-                                          _getSemesters();
                                         },
-                                        label: Text('Add course'),
-                                        icon: Icon(Icons.add),
+                                        validator: (value) {
+                                          if (value!.isEmpty || value == ' ') {
+                                            return 'enter course name';
+                                          }
+                                          return null;
+                                        },
+                                        decoration: InputDecoration(
+                                          errorText: errorname,
+                                          contentPadding: EdgeInsets.all(10),
+                                          // icon: Icon(Icons.person),
+                                          border: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                          labelText: 'Course name ',
+                                          hintText: 'course name',
+                                        ),
+                                        controller: nameController,
                                       ),
-                                    ],
-                                  ),
-                                ],
+                                    ),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      // spacing: 20,
+                                      children: [
+                                        DropdownMenu(
+                                            onSelected: (grade) =>
+                                                selectedvalue = grade!.toInt(),
+                                            initialSelection: 4,
+                                            // controller: gradecontroller,
+                                            dropdownMenuEntries: grades!.map(
+                                              (grade) {
+                                                return DropdownMenuEntry<int>(
+                                                    value: grade['gradeid'],
+                                                    label: grade['Grade']);
+                                              },
+                                            ).toList()),
+                                        DropdownMenu(
+                                          initialSelection: 2,
+                                          controller: creditcontroller,
+                                          label: Text('Creedit hours'),
+                                          dropdownMenuEntries: [
+                                            DropdownMenuEntry(
+                                                value: 1, label: '1'),
+                                            DropdownMenuEntry(
+                                                value: 2, label: '2'),
+                                            DropdownMenuEntry(
+                                                value: 3, label: '3'),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      spacing: 20,
+                                      children: [
+                                        ElevatedButton.icon(
+                                          style: ButtonStyle(
+                                            iconColor: WidgetStatePropertyAll(
+                                                Colors.white),
+                                            foregroundColor:
+                                                WidgetStatePropertyAll(
+                                                    Colors.white),
+                                            backgroundColor:
+                                                WidgetStatePropertyAll(
+                                                    Colors.red),
+                                          ),
+                                          onPressed: () {
+                                            _getSemesters();
+                                            Navigator.of(context).pop();
+                                          },
+                                          label: Text('cancel'),
+                                          icon: Icon(Icons.cancel),
+                                        ),
+                                        ElevatedButton.icon(
+                                          onPressed: () async {
+                                            print(nameController.text);
+                                            if (!formKey.currentState!
+                                                .validate()) {
+                                              setState(() {
+                                                errorname =
+                                                    'enter courses name';
+                                              });
+                                              return;
+                                            }
+                                            await _addCourse(
+                                                nameController.text,
+                                                selectedvalue,
+                                                int.parse(
+                                                    creditcontroller.text));
+                                            widget.db
+                                                .rawQuery(
+                                                    'SELECT * FROM courses')
+                                                .then((value) => print(value));
+                                            // print();
+                                            setState(() {
+                                              Navigator.of(context).pop();
+                                            });
+                                            _getSemesters();
+                                          },
+                                          label: Text('Add course'),
+                                          icon: Icon(Icons.add),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           );
@@ -243,19 +313,39 @@ class _AddSemState extends State<AddSem> {
                 ],
               ),
               SizedBox(
-                height: MediaQuery.of(context).size.height * 0.7,
-                width: double.infinity,
-                child: semesters.isEmpty
-                    ? Center(
-                        heightFactor: 2,
-                        child: Text(
-                          'Add courses!',
-                          style: TextStyle(
-                            fontSize: 20,
-                          ),
+                height: 20,
+              ),
+              Text(
+                'Semester GPA: $name',
+                style: TextStyle(
+                  fontWeight: FontWeight.w500,
+                  // fontFamily: 'GoogleSans',
+                  fontSize: 20,
+                ),
+              ),
+              Text(
+                'Semester Credit hours:$credits ',
+                style: TextStyle(
+                  fontWeight: FontWeight.w500,
+                  // fontFamily: 'GoogleSans',
+                  fontSize: 20,
+                ),
+              ),
+
+              semesters.isEmpty
+                  ? Center(
+                      heightFactor: 2,
+                      child: Text(
+                        'Add courses!',
+                        style: TextStyle(
+                          fontSize: 20,
                         ),
-                      )
-                    : ListView.builder(
+                      ),
+                    )
+                  : Expanded(
+                      child: ListView.builder(
+                        padding: EdgeInsets.all(0),
+                        // shrinkWrap: true,
                         itemCount: semesters.length,
                         itemBuilder: (context, index) {
                           return Dismissible(
@@ -263,6 +353,8 @@ class _AddSemState extends State<AddSem> {
                               await widget.db.rawDelete(
                                   'DELETE FROM courses WHERE courseid = ${semesters[index]['courseid']}');
                               _getSemesters();
+                              updateAllGPAs();
+                              setState(() {});
                             },
                             key: Key(semesters[index]['semid'].toString()),
                             child: Card(
@@ -270,6 +362,7 @@ class _AddSemState extends State<AddSem> {
                               child: ListTile(
                                 onTap: () {
                                   showModalBottomSheet(
+                                    // isScrollControlled: true,
                                     context: context,
                                     builder: (context) {
                                       return Container(
@@ -282,8 +375,10 @@ class _AddSemState extends State<AddSem> {
                                           mainAxisAlignment:
                                               MainAxisAlignment.spaceEvenly,
                                           children: [
-                                            Text(semesters[index]
-                                                ['course_name']),
+                                            Text(
+                                              semesters[index]['course_name'],
+                                              style: TextStyle(fontSize: 20),
+                                            ),
                                             Row(
                                               mainAxisAlignment:
                                                   MainAxisAlignment.spaceEvenly,
@@ -362,7 +457,8 @@ class _AddSemState extends State<AddSem> {
                           );
                         },
                       ),
-              ),
+                    ),
+              // ),
             ],
           ),
         ),
