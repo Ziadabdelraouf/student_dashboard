@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-// import 'package:google_fonts/google_fonts.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -13,7 +12,6 @@ class StartScreen extends StatefulWidget {
 }
 
 class _StartScreenState extends State<StartScreen> {
-  //get name if not firsttime to open the app
   Future<String> _getname() async {
     var databasesPath = await getDatabasesPath();
     String path = join(databasesPath, 'student.db');

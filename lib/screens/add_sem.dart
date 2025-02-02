@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-// import 'package:google_fonts/google_fonts.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:student_dashboard/Widgets/editable_text.dart';
 
@@ -99,7 +98,6 @@ class _AddSemState extends State<AddSem> {
       _getgrades();
       updateAllGPAs();
       _getSemesters();
-      // _getgpa();
     });
   }
 
@@ -108,9 +106,7 @@ class _AddSemState extends State<AddSem> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        // bottomOpacity: 2,
         elevation: 0,
-
         centerTitle: true,
         title: EditableTextWidget(
           changename: _changeName,
@@ -119,9 +115,6 @@ class _AddSemState extends State<AddSem> {
         backgroundColor: Colors.transparent,
       ),
       backgroundColor: Colors.transparent,
-
-      // alignment: Alignment.center,
-
       body: Container(
         padding: EdgeInsets.only(top: kToolbarHeight),
         decoration: BoxDecoration(
@@ -135,7 +128,6 @@ class _AddSemState extends State<AddSem> {
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            // mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             spacing: 10,
             children: [
@@ -194,7 +186,6 @@ class _AddSemState extends State<AddSem> {
                                         decoration: InputDecoration(
                                           errorText: errorname,
                                           contentPadding: EdgeInsets.all(10),
-                                          // icon: Icon(Icons.person),
                                           border: OutlineInputBorder(
                                             borderRadius:
                                                 BorderRadius.circular(10),
@@ -208,13 +199,11 @@ class _AddSemState extends State<AddSem> {
                                     Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,
-                                      // spacing: 20,
                                       children: [
                                         DropdownMenu(
                                             onSelected: (grade) =>
                                                 selectedvalue = grade!.toInt(),
                                             initialSelection: 4,
-                                            // controller: gradecontroller,
                                             dropdownMenuEntries: grades!.map(
                                               (grade) {
                                                 return DropdownMenuEntry<int>(
@@ -244,13 +233,16 @@ class _AddSemState extends State<AddSem> {
                                         ElevatedButton.icon(
                                           style: ButtonStyle(
                                             iconColor: WidgetStatePropertyAll(
-                                                Colors.white),
+                                              Colors.white,
+                                            ),
                                             foregroundColor:
                                                 WidgetStatePropertyAll(
-                                                    Colors.white),
+                                              Colors.white,
+                                            ),
                                             backgroundColor:
                                                 WidgetStatePropertyAll(
-                                                    Colors.red),
+                                              Colors.red,
+                                            ),
                                           ),
                                           onPressed: () {
                                             _getSemesters();
@@ -279,7 +271,6 @@ class _AddSemState extends State<AddSem> {
                                                 .rawQuery(
                                                     'SELECT * FROM courses')
                                                 .then((value) => print(value));
-                                            // print();
                                             setState(() {
                                               Navigator.of(context).pop();
                                             });
@@ -319,7 +310,6 @@ class _AddSemState extends State<AddSem> {
                 'Semester GPA: $name',
                 style: TextStyle(
                   fontWeight: FontWeight.w500,
-                  // fontFamily: 'GoogleSans',
                   fontSize: 20,
                 ),
               ),
@@ -327,11 +317,9 @@ class _AddSemState extends State<AddSem> {
                 'Semester Credit hours:$credits ',
                 style: TextStyle(
                   fontWeight: FontWeight.w500,
-                  // fontFamily: 'GoogleSans',
                   fontSize: 20,
                 ),
               ),
-
               semesters.isEmpty
                   ? Center(
                       heightFactor: 2,
@@ -345,7 +333,6 @@ class _AddSemState extends State<AddSem> {
                   : Expanded(
                       child: ListView.builder(
                         padding: EdgeInsets.all(0),
-                        // shrinkWrap: true,
                         itemCount: semesters.length,
                         itemBuilder: (context, index) {
                           return Dismissible(
@@ -362,7 +349,6 @@ class _AddSemState extends State<AddSem> {
                               child: ListTile(
                                 onTap: () {
                                   showModalBottomSheet(
-                                    // isScrollControlled: true,
                                     context: context,
                                     builder: (context) {
                                       return Container(
@@ -391,13 +377,14 @@ class _AddSemState extends State<AddSem> {
                                                     print(semesters[index]
                                                         ['gradeid']);
                                                     await widget.db.rawUpdate(
-                                                        "UPDATE courses SET grade = ? WHERE courseid = ?",
-                                                        [
-                                                          int.parse(
-                                                              grade.toString()),
-                                                          semesters[index]
-                                                              ['courseid']
-                                                        ]);
+                                                      "UPDATE courses SET grade = ? WHERE courseid = ?",
+                                                      [
+                                                        int.parse(
+                                                            grade.toString()),
+                                                        semesters[index]
+                                                            ['courseid']
+                                                      ],
+                                                    );
                                                   },
                                                   dropdownMenuEntries:
                                                       grades!.map((grade) {
@@ -424,11 +411,17 @@ class _AddSemState extends State<AddSem> {
                                                   },
                                                   dropdownMenuEntries: [
                                                     DropdownMenuEntry(
-                                                        value: 1, label: '1'),
+                                                      value: 1,
+                                                      label: '1',
+                                                    ),
                                                     DropdownMenuEntry(
-                                                        value: 2, label: '2'),
+                                                      value: 2,
+                                                      label: '2',
+                                                    ),
                                                     DropdownMenuEntry(
-                                                        value: 3, label: '3'),
+                                                      value: 3,
+                                                      label: '3',
+                                                    ),
                                                   ],
                                                 ),
                                                 ElevatedButton(
@@ -458,7 +451,6 @@ class _AddSemState extends State<AddSem> {
                         },
                       ),
                     ),
-              // ),
             ],
           ),
         ),

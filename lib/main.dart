@@ -69,14 +69,13 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    // widget.firsttime = false;
+
     screens = [
       GpaCalculator(db: widget.db),
-       CustomContainer(firsttime: false, db: widget.db),
+      CustomContainer(firsttime: false, db: widget.db),
     ];
   }
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -103,18 +102,18 @@ class _MyAppState extends State<MyApp> {
                 ),
                 elevation: 8,
                 activeColor: Colors.white,
+                color: Colors.black,
                 shadowColor: Colors.black.withOpacity(0.1),
                 initialActiveIndex: 1,
                 items: [
                   TabItem(
+                    title: 'GPA ',
                     icon: Icon(Icons.school),
                   ),
                   TabItem(
+                    title: 'Home',
                     icon: Icon(Icons.home),
                   ),
-                  // TabItem(
-                  //   icon: Icon(Icons.person),
-                  // ),
                 ],
                 onTap: (index) => setState(() {
                   widget.firsttime = false;
@@ -127,7 +126,6 @@ class _MyAppState extends State<MyApp> {
                       firsttime: widget.firsttime,
                     )
                   : screens[_currentIndex]),
-          // StartScreen()
         ],
       ),
       theme: ThemeData(

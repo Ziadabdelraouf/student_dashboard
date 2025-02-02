@@ -1,13 +1,10 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-// import 'package:google_fonts/google_fonts.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:student_dashboard/screens/start_screen.dart';
 
-// Returns true if the input contains a number
 bool containsNumber(String input) {
-  final regex = RegExp(r'\d'); // Matches any digit
+  final regex = RegExp(r'\d');
   return regex.hasMatch(input);
 }
 
@@ -62,7 +59,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     await db.execute(
         'INSERT INTO students (name,major,GPA, semesters) VALUES (?,?,0,0)',
         [name, major]);
-    //  db.close();
     setState(() {
       isadding = false;
     });
@@ -90,7 +86,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 child: Column(
                   spacing: 15,
                   mainAxisAlignment: MainAxisAlignment.center,
-                  // mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       'Welcome to Student Dashboard',
@@ -161,7 +156,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                               context: context,
                               builder: (context) {
                                 return AlertDialog(
-                                  // contentPadding: EdgeInsets.all(10),
                                   title: Text('You are already registered'),
                                   content: Text(
                                       'please wait while we tailor the app for you',

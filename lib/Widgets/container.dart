@@ -47,24 +47,5 @@ class _CustomContainerState extends State<CustomContainer> {
   @override
   Widget build(BuildContext context) {
     return content;
-    // Center(
-    //   child: Column(
-    //     mainAxisSize: MainAxisSize.min,
-    //     children: [
-    //       Container(
-    //         alignment: Alignment.center,
-    //         decoration: BoxDecoration(
-    //           color: Colors.white,
-    //           borderRadius: BorderRadius.circular(25),
-    //         ),
-    //         height: MediaQuery.of(context).size.height * 0.6,
-    //         width: MediaQuery.of(context).size.width * 0.8,
-    //         child: Image.asset(
-    //           "assets/homepage.jpg",
-    //         ),
-    //       ),
-    //     ],
-    //   ),
-    // );
   }
 }

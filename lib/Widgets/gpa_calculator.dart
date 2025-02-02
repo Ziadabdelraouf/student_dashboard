@@ -96,19 +96,13 @@ class _GpaCalculatorState extends State<GpaCalculator> {
                       : 'gpa: ' +
                           double.parse(
                             double.parse(gpa.last['CGPA'].toString())
-                                .toStringAsFixed(3),
+                                .toStringAsFixed(2),
                           ).toString(),
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold
-                  ),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 Text(
                   'Total Credits: ' + credits.toString(),
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold
-                  ),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -186,52 +180,67 @@ class _GpaCalculatorState extends State<GpaCalculator> {
               children: [
                 ElevatedButton.icon(
                   style: ButtonStyle(
-                    iconColor: WidgetStatePropertyAll(Colors.white),
-                    foregroundColor: WidgetStatePropertyAll(Colors.white),
-                    backgroundColor: WidgetStatePropertyAll(Colors.red),
+                    iconColor: WidgetStatePropertyAll(
+                      Colors.white,
+                    ),
+                    foregroundColor: WidgetStatePropertyAll(
+                      Colors.white,
+                    ),
+                    backgroundColor: WidgetStatePropertyAll(
+                      Colors.red,
+                    ),
                   ),
                   onPressed: () async {
-                    await widget.db!.rawQuery('drop table courses');
-                    await widget.db!.rawQuery('drop table GPA ');
-                    await widget.db!.rawQuery('drop table semesters');
                     await widget.db!.rawQuery(
-                        'create table if not exists semesters (semid INTEGER PRIMARY KEY, semester_name Text)');
+                      'drop table courses',
+                    );
                     await widget.db!.rawQuery(
-                        'create table if not exists courses (courseid INTEGER PRIMARY KEY, sid INTEGER, course_name TEXT, grade id, credit INTEGER, foreign key (sid) references semesters on delete cascade,foreign key (grade) references grade on update cascade) ');
+                      'drop table GPA ',
+                    );
                     await widget.db!.rawQuery(
-                        'create table if not exists GPA (Gid INTEGER PRIMARY KEY,semesterid integer, GPA REAL,CGPA real,total_credit INTEGER,foreign key (semesterid) references semesters on delete cascade)');
+                      'drop table semesters',
+                    );
+                    await widget.db!.rawQuery(
+                      'create table if not exists semesters (semid INTEGER PRIMARY KEY, semester_name Text)',
+                    );
+                    await widget.db!.rawQuery(
+                      'create table if not exists courses (courseid INTEGER PRIMARY KEY, sid INTEGER, course_name TEXT, grade id, credit INTEGER, foreign key (sid) references semesters on delete cascade,foreign key (grade) references grade on update cascade) ',
+                    );
+                    await widget.db!.rawQuery(
+                      'create table if not exists GPA (Gid INTEGER PRIMARY KEY,semesterid integer, GPA REAL,CGPA real,total_credit INTEGER,foreign key (semesterid) references semesters on delete cascade)',
+                    );
                     _getgpa();
                   },
                   label: Text('delete all'),
                 ),
                 ElevatedButton.icon(
-                    onPressed: () async {
-                      int sem = 0;
-                      final List<Map<String, dynamic>> response = await widget
-                          .db!
-                          .rawQuery('SELECT semid FROM semesters');
-                      if (response.isNotEmpty) {
-                        sem = await response.last['semid'];
-                      }
-                      await widget.db!.execute(
-                          'insert into semesters (semester_name) values ("Semester ${sem + 1}")');
-                      await widget.db!.execute(
-                          'insert into GPA (semesterid,GPA,CGPA,total_credit) values (${sem + 1},0,0,0)');
-                      await Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => AddSem(
-                            name: 'Semester ${sem + 1}',
-                            db: widget.db!,
-                            id: (sem + 1),
-                          ),
+                  onPressed: () async {
+                    int sem = 0;
+                    final List<Map<String, dynamic>> response = await widget.db!
+                        .rawQuery('SELECT semid FROM semesters');
+                    if (response.isNotEmpty) {
+                      sem = await response.last['semid'];
+                    }
+                    await widget.db!.execute(
+                        'insert into semesters (semester_name) values ("Semester ${sem + 1}")');
+                    await widget.db!.execute(
+                        'insert into GPA (semesterid,GPA,CGPA,total_credit) values (${sem + 1},0,0,0)');
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => AddSem(
+                          name: 'Semester ${sem + 1}',
+                          db: widget.db!,
+                          id: (sem + 1),
                         ),
-                      );
-                      await updateAllGPAs();
-                      await _getgpa();
-                      print(gpa);
-                    },
-                    label: Text('Add Semester'),
-                    icon: Icon(Icons.add)),
+                      ),
+                    );
+                    await updateAllGPAs();
+                    await _getgpa();
+                    print(gpa);
+                  },
+                  label: Text('Add Semester'),
+                  icon: Icon(Icons.add),
+                ),
               ],
             ),
             SizedBox(
