@@ -336,11 +336,23 @@ class _AddSemState extends State<AddSem> {
                         itemCount: semesters.length,
                         itemBuilder: (context, index) {
                           return Dismissible(
+                            secondaryBackground: Container(
+                              color: Colors.red,
+                              child: Center(
+                                child: Text(
+                                  'Delete',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                  ),
+                                ),
+                              ),
+                            ),
                             onDismissed: (dism) async {
                               await widget.db.rawDelete(
                                   'DELETE FROM courses WHERE courseid = ${semesters[index]['courseid']}');
-                              _getSemesters();
-                              updateAllGPAs();
+                              await _getSemesters();
+                              await updateAllGPAs();
                               setState(() {});
                             },
                             key: Key(semesters[index]['semid'].toString()),

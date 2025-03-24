@@ -122,6 +122,18 @@ class _GpaCalculatorState extends State<GpaCalculator> {
                       itemCount: gpa.length,
                       itemBuilder: (context, index) {
                         return Dismissible(
+                          secondaryBackground: Container(
+                            color: Colors.red,
+                            child: Center(
+                              child: Text(
+                                'Delete',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                ),
+                              ),
+                            ),
+                          ),
                           key: Key(
                             gpa[index]['semesterid'].toString(),
                           ),
