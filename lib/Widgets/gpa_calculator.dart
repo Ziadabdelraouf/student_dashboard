@@ -45,7 +45,7 @@ class _GpaCalculatorState extends State<GpaCalculator> {
 
   List<Map<String, dynamic>> gpa = [];
   Future<void> _getgpa() async {
-    gpa = await widget.db!.rawQuery(
+    List<Map<String, dynamic>> gpas = await widget.db!.rawQuery(
         'select total_credit,semester_name,Gpa,semesterid,CGPA from semesters join GPA on semesters.semid = GPA.semesterid ');
     List<Map> gpa1 = await widget.db!
         .rawQuery('select SUM(total_credit) AS total_credit from GPA');
@@ -55,8 +55,10 @@ class _GpaCalculatorState extends State<GpaCalculator> {
         await widget.db!.rawQuery('SELECT * FROM GPA');
     final List<Map<String, dynamic>> response1 =
         await widget.db!.rawQuery('SELECT * FROM semesters');
+    gpa = List<Map<String, dynamic>>.from(gpas);
     print(response1);
     print(gpa);
+
     print(response);
     await updateAllGPAs();
   }
@@ -107,12 +109,14 @@ class _GpaCalculatorState extends State<GpaCalculator> {
               ],
             ),
             gpa.isEmpty
-                ? Center(
-                    child: Text(
-                      'nothing to show',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontSize: 20,
+                ? Expanded(
+                    child: Center(
+                      child: Text(
+                        'nothing to show',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 20,
+                        ),
                       ),
                     ),
                   )
@@ -122,7 +126,7 @@ class _GpaCalculatorState extends State<GpaCalculator> {
                       itemCount: gpa.length,
                       itemBuilder: (context, index) {
                         return Dismissible(
-                          secondaryBackground: Container(
+                          background: Container(
                             color: Colors.red,
                             child: Center(
                               child: Text(
@@ -134,6 +138,49 @@ class _GpaCalculatorState extends State<GpaCalculator> {
                               ),
                             ),
                           ),
+                          confirmDismiss: (direction) async {
+                            final deleted = gpa[index]['semesterid'];
+                            final bool? confirm = await showDialog(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: Text('Confirm Delete'),
+                                content: Text(
+                                    'Are you sure you want to delete "${gpa[index]['semester_name']}"?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.of(ctx).pop(false),
+                                    child: Text('Cancel'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.of(ctx).pop(true),
+                                    child: Text('Delete'),
+                                  ),
+                                ],
+                              ),
+                            );
+
+                            if (confirm == true) {
+                              await Future.delayed(Duration(milliseconds: 300));
+                              setState(() {
+                                gpa.removeWhere(
+                                    (s) => s['semesterid'] == deleted);
+                              });
+                              await widget.db!.rawDelete(
+                                  'delete from semesters where semid = ${deleted}');
+                              await widget.db!.rawDelete(
+                                  'delete from GPA where semesterid = ${deleted}');
+                              await widget.db!.rawDelete(
+                                  'delete from courses where sid = ${deleted}');
+                              await _getgpa();
+                              await updateAllGPAs();
+                              setState(() {});
+                              return true; // allow dismissal
+                            } else {
+                              return false; // cancel dismissal
+                            }
+                          },
                           key: Key(
                             gpa[index]['semesterid'].toString(),
                           ),
@@ -144,8 +191,8 @@ class _GpaCalculatorState extends State<GpaCalculator> {
                                 'delete from GPA where semesterid = ${gpa[index]['semesterid']}');
                             await widget.db!.rawDelete(
                                 'delete from courses where sid = ${gpa[index]['semesterid']}');
-                            await updateAllGPAs();
                             await _getgpa();
+                            await updateAllGPAs();
                             setState(() {});
                           },
                           child: Card(

@@ -83,9 +83,10 @@ class _AddSemState extends State<AddSem> {
   }
 
   Future<void> _getSemesters() async {
-    semesters = await widget.db.rawQuery(
+    List<Map<String, dynamic>> semestersdum = await widget.db.rawQuery(
       'SELECT course_name,grade.grade as grade,credit,courseid,gradeid FROM courses  join grade ON courses.grade=gradeid where sid = ${widget.id}',
     );
+    semesters = List<Map<String, dynamic>>.from(semestersdum);
     await updateAllGPAs();
     await _getgpa();
     setState(() {});
@@ -203,7 +204,7 @@ class _AddSemState extends State<AddSem> {
                                         DropdownMenu(
                                             onSelected: (grade) =>
                                                 selectedvalue = grade!.toInt(),
-                                            initialSelection: 4,
+                                            initialSelection: 1,
                                             dropdownMenuEntries: grades!.map(
                                               (grade) {
                                                 return DropdownMenuEntry<int>(
@@ -212,16 +213,20 @@ class _AddSemState extends State<AddSem> {
                                               },
                                             ).toList()),
                                         DropdownMenu(
-                                          initialSelection: 2,
+                                          initialSelection: 0,
                                           controller: creditcontroller,
                                           label: Text('Creedit hours'),
                                           dropdownMenuEntries: [
+                                            DropdownMenuEntry(
+                                                value: 0, label: '0'),
                                             DropdownMenuEntry(
                                                 value: 1, label: '1'),
                                             DropdownMenuEntry(
                                                 value: 2, label: '2'),
                                             DropdownMenuEntry(
                                                 value: 3, label: '3'),
+                                            DropdownMenuEntry(
+                                                value: 4, label: '4'),
                                           ],
                                         ),
                                       ],
@@ -321,12 +326,14 @@ class _AddSemState extends State<AddSem> {
                 ),
               ),
               semesters.isEmpty
-                  ? Center(
-                      heightFactor: 2,
-                      child: Text(
-                        'Add courses!',
-                        style: TextStyle(
-                          fontSize: 20,
+                  ? Expanded(
+                      child: Center(
+                        heightFactor: 2,
+                        child: Text(
+                          'Add courses!',
+                          style: TextStyle(
+                            fontSize: 20,
+                          ),
                         ),
                       ),
                     )
@@ -336,7 +343,7 @@ class _AddSemState extends State<AddSem> {
                         itemCount: semesters.length,
                         itemBuilder: (context, index) {
                           return Dismissible(
-                            secondaryBackground: Container(
+                            background: Container(
                               color: Colors.red,
                               child: Center(
                                 child: Text(
@@ -348,14 +355,49 @@ class _AddSemState extends State<AddSem> {
                                 ),
                               ),
                             ),
-                            onDismissed: (dism) async {
-                              await widget.db.rawDelete(
-                                  'DELETE FROM courses WHERE courseid = ${semesters[index]['courseid']}');
-                              await _getSemesters();
-                              await updateAllGPAs();
-                              setState(() {});
+                            confirmDismiss: (direction) async {
+                              final bool? confirm = await showDialog(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  title: Text('Confirm Delete'),
+                                  content: Text(
+                                      'Are you sure you want to delete "${semesters[index]['course_name']}"?'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.of(ctx).pop(false),
+                                      child: Text('Cancel'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.of(ctx).pop(true),
+                                      child: Text('Delete'),
+                                    ),
+                                  ],
+                                ),
+                              );
+
+                              if (confirm == true) {
+                                final removedId = semesters[index]['courseid'];
+
+                                await Future.delayed(
+                                    Duration(milliseconds: 300));
+                                setState(() {
+                                  semesters.removeWhere((s) =>
+                                      s['coursid'] ==
+                                      semesters[index]['courseid']);
+                                });
+                                await widget.db.rawDelete(
+                                    'DELETE FROM courses WHERE courseid = ?',
+                                    ['${removedId}']);
+                                await updateAllGPAs();
+                                await _getSemesters();
+                                return true; // allow dismissal
+                              } else {
+                                return false; // cancel dismissal
+                              }
                             },
-                            key: Key(semesters[index]['semid'].toString()),
+                            key: Key(semesters[index]['courseid'].toString()),
                             child: Card(
                               elevation: 3,
                               child: ListTile(
@@ -386,8 +428,8 @@ class _AddSemState extends State<AddSem> {
                                                       semesters[index]
                                                           ['gradeid'],
                                                   onSelected: (grade) async {
-                                                    print(semesters[index]
-                                                        ['gradeid']);
+                                                    print(
+                                                        semesters[index]['1']);
                                                     await widget.db.rawUpdate(
                                                       "UPDATE courses SET grade = ? WHERE courseid = ?",
                                                       [

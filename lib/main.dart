@@ -4,6 +4,7 @@ import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:student_dashboard/Widgets/container.dart';
 import 'package:student_dashboard/Widgets/gpa_calculator.dart';
+import 'package:student_dashboard/screens/settings.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -73,6 +74,7 @@ class _MyAppState extends State<MyApp> {
     screens = [
       GpaCalculator(db: widget.db),
       CustomContainer(firsttime: false, db: widget.db),
+      Settings(db: widget.db),
     ];
   }
 
@@ -113,6 +115,10 @@ class _MyAppState extends State<MyApp> {
                   TabItem(
                     title: 'Home',
                     icon: Icon(Icons.home),
+                  ),
+                  TabItem(
+                    title: 'Settings ',
+                    icon: Icon(Icons.settings),
                   ),
                 ],
                 onTap: (index) => setState(() {
